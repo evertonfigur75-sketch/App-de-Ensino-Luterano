@@ -5,6 +5,7 @@ interface ImageUploadInputProps {
   label: string;
   value?: string;
   onChange: (dataUrl: string) => void;
+  onFileSelect?: (file: File) => void;
   required?: boolean;
   helpText?: string;
   isAvatar?: boolean;
@@ -14,6 +15,7 @@ export const ImageUploadInput: React.FC<ImageUploadInputProps> = ({
   label,
   value,
   onChange,
+  onFileSelect,
   required = false,
   helpText,
   isAvatar = false,
@@ -33,6 +35,10 @@ export const ImageUploadInput: React.FC<ImageUploadInputProps> = ({
     if (file.size > 10 * 1024 * 1024) {
       setError('A imagem deve ter no máximo 10MB.');
       return;
+    }
+
+    if (onFileSelect) {
+      onFileSelect(file);
     }
 
     setLoading(true);

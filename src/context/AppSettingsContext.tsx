@@ -4,14 +4,16 @@ import { dbService, DEFAULT_APP_SETTINGS } from '../services/db';
 
 interface AppSettingsContextType {
   settings: AppSettings;
-  updateSettings: (newSettings: Partial<AppSettings>) => AppSettings;
-  resetSettings: () => void;
+  updateSettings: (newSettings: Partial<AppSettings>) => Promise<AppSettings>;
+  resetSettings: () => Promise<void>;
+  isLoading: boolean;
 }
 
 const AppSettingsContext = createContext<AppSettingsContextType | undefined>(undefined);
 
 export const AppSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [settings, setSettings] = useState<AppSettings>(() => dbService.getAppSettings());
+  const [settings, setSettings] = useState<AppSettings>(DEFAULT_APP_SETTINGS);
+  const [isLoading, setIsLoading] = useState(true);
 
   const applyDomStyles = useCallback((s: AppSettings) => {
     if (typeof document !== 'undefined') {
@@ -22,7 +24,15 @@ export const AppSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ c
   }, []);
 
   useEffect(() => {
-    applyDomStyles(settings);
+    const initSettings = async () => {
+      await dbService.init();
+      const fresh = dbService.getAppSettings();
+      setSettings(fresh);
+      applyDomStyles(fresh);
+      setIsLoading(false);
+    };
+
+    initSettings();
 
     const handleSettingsChanged = (e: Event) => {
       const customEvent = e as CustomEvent<AppSettings>;
@@ -40,23 +50,23 @@ export const AppSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ c
     return () => {
       window.removeEventListener('app_settings_changed', handleSettingsChanged);
     };
-  }, [applyDomStyles, settings]);
+  }, [applyDomStyles]);
 
-  const updateSettings = (newSettings: Partial<AppSettings>) => {
-    const updated = dbService.saveAppSettings(newSettings);
+  const updateSettings = async (newSettings: Partial<AppSettings>) => {
+    const updated = await dbService.saveAppSettings(newSettings);
     setSettings(updated);
     applyDomStyles(updated);
     return updated;
   };
 
-  const resetSettings = () => {
-    const reset = dbService.saveAppSettings(DEFAULT_APP_SETTINGS);
+  const resetSettings = async () => {
+    const reset = await dbService.saveAppSettings(DEFAULT_APP_SETTINGS);
     setSettings(reset);
     applyDomStyles(reset);
   };
 
   return (
-    <AppSettingsContext.Provider value={{ settings, updateSettings, resetSettings }}>
+    <AppSettingsContext.Provider value={{ settings, updateSettings, resetSettings, isLoading }}>
       {children}
     </AppSettingsContext.Provider>
   );

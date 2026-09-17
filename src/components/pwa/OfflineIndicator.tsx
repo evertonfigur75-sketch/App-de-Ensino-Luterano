@@ -1,21 +1,33 @@
 import React from 'react';
 import { useOnlineStatus } from './usePWAInstall';
 import { WifiOff } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 export const OfflineIndicator: React.FC = () => {
-  const isOnline = useOnlineStatus();
-
-  if (isOnline) return null;
+  const { isOnline } = useOnlineStatus();
 
   return (
-    <div
-      id="banner-offline"
-      className="fixed bottom-16 sm:bottom-4 left-4 right-4 sm:right-auto sm:max-w-md z-50 flex items-center gap-3 rounded-xl bg-amber-900 text-amber-50 px-4 py-2.5 text-xs font-medium shadow-xl border border-amber-700/50 backdrop-blur-md animate-bounce"
-    >
-      <WifiOff className="w-4 h-4 text-amber-400 flex-shrink-0" />
-      <div>
-        <span className="font-bold">Modo Offline Ativo:</span> Os dados locais e o Catecismo continuam disponíveis para consulta.
-      </div>
-    </div>
+    <AnimatePresence>
+      {!isOnline && (
+        <motion.div
+          initial={{ y: 50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: 50, opacity: 0 }}
+          className="fixed bottom-20 sm:bottom-6 left-1/2 -translate-x-1/2 z-[60] flex items-center gap-3 rounded-2xl bg-amber-600 px-5 py-3 text-sm font-bold text-white shadow-2xl border border-amber-500/30 backdrop-blur-md"
+        >
+          <div className="relative">
+            <WifiOff className="w-5 h-5 text-white" />
+            <span className="absolute -top-1 -right-1 flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-200 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-100"></span>
+            </span>
+          </div>
+          <div className="flex flex-col">
+            <span>Você está offline</span>
+            <span className="text-[10px] font-medium opacity-90">Suas respostas estão sendo salvas localmente e serão sincronizadas automaticamente.</span>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };

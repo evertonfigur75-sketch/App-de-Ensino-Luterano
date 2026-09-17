@@ -19,6 +19,8 @@ import { StudentActivityModal } from './components/student/StudentActivityModal'
 import { AdminDashboard } from './components/admin/AdminDashboard';
 import { AdminProfileModal } from './components/admin/AdminProfileModal';
 import { OfflineIndicator } from './components/pwa/OfflineIndicator';
+import { NotificationToast } from './components/common/NotificationToast';
+import { PushNotificationManager } from './components/common/PushNotificationManager';
 import {
   Home,
   BookOpen,
@@ -30,7 +32,9 @@ import {
   LogOut,
   Shield,
   ChevronRight,
+  MessageSquare,
 } from 'lucide-react';
+import { DirectMessaging } from './components/common/DirectMessaging';
 
 const AppContent: React.FC = () => {
   const { currentUser, isAdmin, studentProfile, logout, refreshProfile } = useAuth();
@@ -102,7 +106,9 @@ const AppContent: React.FC = () => {
           />
         )}
 
+        <NotificationToast />
         <OfflineIndicator />
+        <PushNotificationManager />
       </>
     );
   }
@@ -127,7 +133,9 @@ const AppContent: React.FC = () => {
           />
         )}
 
+        <NotificationToast />
         <OfflineIndicator />
+        <PushNotificationManager />
       </div>
     );
   }
@@ -149,7 +157,9 @@ const AppContent: React.FC = () => {
           />
         </main>
 
+        <NotificationToast />
         <OfflineIndicator />
+        <PushNotificationManager />
       </div>
     );
   }
@@ -191,6 +201,7 @@ const AppContent: React.FC = () => {
     { id: 'catecismo', label: 'Catecismo', icon: Bookmark },
     { id: 'notas', label: 'Boletim', icon: Award },
     { id: 'comunidade', label: 'Devoções e Avisos', icon: HeartHandshake },
+    { id: 'mensagens', label: 'Dúvidas ao Pastor', icon: MessageSquare },
     { id: 'perfil', label: 'Meu Perfil', icon: User },
   ];
 
@@ -269,6 +280,17 @@ const AppContent: React.FC = () => {
 
         {studentTab === 'comunidade' && <StudentCommunityView />}
 
+        {studentTab === 'mensagens' && studentProfile && (
+          <div className="max-w-2xl mx-auto">
+            <DirectMessaging 
+              currentUser={studentProfile}
+              studentId={studentProfile.id}
+              recipientId="admin-pastor-everton"
+              title="Canal Direto com o Pastor"
+            />
+          </div>
+        )}
+
         {studentTab === 'perfil' && <StudentProfileView />}
 
         {studentTab === 'mais' && (
@@ -295,6 +317,17 @@ const AppContent: React.FC = () => {
                 <div className="flex items-center gap-2.5">
                   <HeartHandshake className="w-4 h-4 text-amber-600" />
                   <span>Devoções, Eventos e Avisos</span>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-400" />
+              </button>
+
+              <button
+                onClick={() => setStudentTab('mensagens')}
+                className="w-full p-3 rounded-2xl hover:bg-slate-50 flex items-center justify-between text-xs font-bold text-slate-800 transition"
+              >
+                <div className="flex items-center gap-2.5">
+                  <MessageSquare className="w-4 h-4 text-sky-600" />
+                  <span>Enviar Dúvida ao Pastor</span>
                 </div>
                 <ChevronRight className="w-4 h-4 text-slate-400" />
               </button>
@@ -342,7 +375,9 @@ const AppContent: React.FC = () => {
         onSelectTab={(tab) => setStudentTab(tab)}
       />
 
+      <NotificationToast />
       <OfflineIndicator />
+      <PushNotificationManager />
     </div>
   );
 };

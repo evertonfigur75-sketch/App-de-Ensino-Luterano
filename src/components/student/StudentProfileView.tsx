@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { dbService } from '../../services/db';
 import { ImageUploadInput } from '../common/ImageUploadInput';
+import { StudentDocumentSection } from './StudentDocumentSection';
 import {
   User,
   Church,
@@ -30,6 +31,7 @@ export const StudentProfileView: React.FC = () => {
   const [street, setStreet] = useState(studentProfile.street || '');
   const [number, setNumber] = useState(studentProfile.number || '');
   const [complement, setComplement] = useState(studentProfile.complement || '');
+  const [avatarFile, setAvatarFile] = useState<File | undefined>(undefined);
 
   // Password change
   const [newPassword, setNewPassword] = useState('');
@@ -55,7 +57,7 @@ export const StudentProfileView: React.FC = () => {
       street,
       number,
       complement,
-    });
+    }, avatarFile);
 
     if (newPassword) {
       if (newPassword.length < 6) {
@@ -127,6 +129,7 @@ export const StudentProfileView: React.FC = () => {
             label="Atualizar Foto de Perfil (Câmera ou Galeria)"
             value={avatarUrl}
             onChange={setAvatarUrl}
+            onFileSelect={setAvatarFile}
             isAvatar={true}
           />
         </div>
@@ -237,6 +240,13 @@ export const StudentProfileView: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Documentos Paroquiais */}
+        <StudentDocumentSection 
+          studentId={studentProfile.id}
+          documents={studentProfile.documents || []}
+          onDocumentUploaded={() => {}} 
+        />
 
         {/* Alterar Senha */}
         <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-4">

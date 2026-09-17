@@ -48,9 +48,9 @@ export const AdminContentManagementView: React.FC = () => {
   const studyTexts = dbService.getStudyTexts();
   const congregations = dbService.getCongregations();
 
-  const handleSaveDevotion = (e: React.FormEvent) => {
+  const handleSaveDevotion = async (e: React.FormEvent) => {
     e.preventDefault();
-    dbService.saveDevotion({
+    await dbService.saveDevotion({
       id: 'dev-' + Date.now(),
       title: devTitle,
       bibleVerse: devVerse,
@@ -68,9 +68,9 @@ export const AdminContentManagementView: React.FC = () => {
     setDevPrayer('');
   };
 
-  const handleSaveEvent = (e: React.FormEvent) => {
+  const handleSaveEvent = async (e: React.FormEvent) => {
     e.preventDefault();
-    dbService.saveEvent({
+    await dbService.saveEvent({
       id: 'evt-' + Date.now(),
       title: evtTitle,
       date: evtDate,
@@ -85,9 +85,9 @@ export const AdminContentManagementView: React.FC = () => {
     setEvtDesc('');
   };
 
-  const handleSaveAnnouncement = (e: React.FormEvent) => {
+  const handleSaveAnnouncement = async (e: React.FormEvent) => {
     e.preventDefault();
-    dbService.saveAnnouncement({
+    await dbService.saveAnnouncement({
       id: 'ann-' + Date.now(),
       title: annTitle,
       content: annContent,
@@ -102,9 +102,9 @@ export const AdminContentManagementView: React.FC = () => {
     setAnnContent('');
   };
 
-  const handleSaveStudyText = (e: React.FormEvent) => {
+  const handleSaveStudyText = async (e: React.FormEvent) => {
     e.preventDefault();
-    dbService.saveStudyText({
+    await dbService.saveStudyText({
       id: 'txt-' + Date.now(),
       title: txtTitle,
       category: txtCategory as any,
@@ -225,8 +225,8 @@ export const AdminContentManagementView: React.FC = () => {
               </div>
 
               <button
-                onClick={() => {
-                  dbService.deleteDevotion(dev.id);
+                onClick={async () => {
+                  await dbService.deleteDevotion(dev.id);
                   setFeedback('Devoção excluída.');
                 }}
                 className="p-2 text-slate-400 hover:text-red-600 rounded-lg"
@@ -258,8 +258,8 @@ export const AdminContentManagementView: React.FC = () => {
               </div>
 
               <button
-                onClick={() => {
-                  dbService.deleteEvent(evt.id);
+                onClick={async () => {
+                  await dbService.deleteEvent(evt.id);
                   setFeedback('Evento excluído.');
                 }}
                 className="p-2 text-slate-400 hover:text-red-600 rounded-lg"
@@ -288,8 +288,8 @@ export const AdminContentManagementView: React.FC = () => {
               </div>
 
               <button
-                onClick={() => {
-                  dbService.deleteAnnouncement(ann.id);
+                onClick={async () => {
+                  await dbService.deleteAnnouncement(ann.id);
                   setFeedback('Aviso excluído.');
                 }}
                 className="p-2 text-slate-400 hover:text-red-600 rounded-lg"
@@ -320,8 +320,8 @@ export const AdminContentManagementView: React.FC = () => {
               </div>
 
               <button
-                onClick={() => {
-                  dbService.deleteStudyText(txt.id);
+                onClick={async () => {
+                  await dbService.deleteStudyText(txt.id);
                   setFeedback('Texto excluído.');
                 }}
                 className="p-2 text-slate-400 hover:text-red-600 rounded-lg"

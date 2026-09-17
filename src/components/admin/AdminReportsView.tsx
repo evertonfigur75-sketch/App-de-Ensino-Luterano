@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { dbService } from '../../services/db';
 import {
   FileSpreadsheet,
@@ -10,17 +10,161 @@ import {
   CheckCircle2,
   CalendarCheck,
   Award,
+  Cloud,
+  Check,
+  AlertCircle,
+  Database,
+  RefreshCw,
+  Clock,
+  ExternalLink
 } from 'lucide-react';
+import { driveService } from '../../services/drive';
+import { useAuth } from '../../context/AuthContext';
+import { convertToCSV, downloadCSV } from '../../utils/csvExport';
+
+interface StorageBackup {
+  name: string;
+  size: string;
+  updated: string;
+  id: string;
+}
 
 export const AdminReportsView: React.FC = () => {
+  const { currentUser, isAdmin } = useAuth();
   const [selectedReport, setSelectedReport] = useState<'alunos' | 'cultos' | 'notas' | 'backup'>('alunos');
   const [backupJson, setBackupJson] = useState('');
   const [importStatus, setImportStatus] = useState<string | null>(null);
+  const [isBackingUp, setIsBackingUp] = useState(false);
+  const [storageBackups, setStorageBackups] = useState<StorageBackup[]>([]);
+  const [isLoadingBackups, setIsLoadingBackups] = useState(false);
+  const [isTriggeringBackup, setIsTriggeringBackup] = useState(false);
 
   const students = dbService.getAllStudents();
   const worships = dbService.getAllWorshipRecords();
   const grades = dbService.getAllGrades();
   const congregations = dbService.getCongregations();
+
+  const fetchStorageBackups = async () => {
+    if (!isAdmin) return;
+    setIsLoadingBackups(true);
+    try {
+      const idToken = await currentUser?.getIdToken();
+      const response = await fetch('/api/admin/backups', {
+        headers: {
+          'Authorization': `Bearer ${idToken}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setStorageBackups(data);
+      }
+    } catch (err) {
+      console.error('Erro ao buscar backups do storage:', err);
+    } finally {
+      setIsLoadingBackups(false);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedReport === 'backup') {
+      fetchStorageBackups();
+    }
+  }, [selectedReport]);
+
+  const handleDownloadStorageBackup = async (fileName: string) => {
+    try {
+      const idToken = await currentUser?.getIdToken();
+      const response = await fetch(`/api/admin/backups/${fileName}`, {
+        headers: {
+          'Authorization': `Bearer ${idToken}`
+        }
+      });
+      if (response.ok) {
+        const { url } = await response.json();
+        window.open(url, '_blank');
+      }
+    } catch (err) {
+      console.error('Erro ao baixar backup:', err);
+      alert('Erro ao gerar link de download.');
+    }
+  };
+
+  const handleTriggerManualBackup = async () => {
+    setIsTriggeringBackup(true);
+    try {
+      const idToken = await currentUser?.getIdToken();
+      const response = await fetch('/api/admin/backups/trigger', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${idToken}`
+        }
+      });
+      if (response.ok) {
+        alert('Backup manual iniciado e processado com sucesso!');
+        fetchStorageBackups();
+      }
+    } catch (err) {
+      console.error('Erro ao disparar backup:', err);
+      alert('Erro ao disparar backup manual.');
+    } finally {
+      setIsTriggeringBackup(false);
+    }
+  };
+
+  const handleExportCSV = () => {
+    let data: any[] = [];
+    let headers: { key: string; label: string }[] = [];
+    let fileName = '';
+
+    if (selectedReport === 'alunos') {
+      data = students;
+      headers = [
+        { key: 'name', label: 'Nome' },
+        { key: 'email', label: 'E-mail' },
+        { key: 'courseType', label: 'Curso' },
+        { key: 'congregationName', label: 'Congregação' },
+        { key: 'phone', label: 'Telefone' },
+        { key: 'status', label: 'Status' },
+        { key: 'baptism.isBaptized', label: 'Batizado' },
+      ];
+      fileName = `alunos-${new Date().toISOString().split('T')[0]}.csv`;
+    } else if (selectedReport === 'cultos') {
+      data = worships.map(w => ({
+        ...w,
+        studentName: students.find(s => s.id === w.studentId)?.name || w.studentName
+      }));
+      headers = [
+        { key: 'studentName', label: 'Aluno' },
+        { key: 'congregationName', label: 'Congregação' },
+        { key: 'monthIndex', label: 'Mês' },
+        { key: 'worshipDate', label: 'Data do Culto' },
+        { key: 'biblicalReading', label: 'Leitura Bíblica' },
+        { key: 'status', label: 'Status' },
+      ];
+      fileName = `frequencia-cultos-${new Date().toISOString().split('T')[0]}.csv`;
+    } else if (selectedReport === 'notas') {
+      data = grades.map(g => ({
+        ...g,
+        studentName: students.find(s => s.id === g.studentId)?.name || g.studentName
+      }));
+      headers = [
+        { key: 'studentName', label: 'Aluno' },
+        { key: 'activityTitle', label: 'Atividade' },
+        { key: 'score', label: 'Nota' },
+        { key: 'maxScore', label: 'Máximo' },
+        { key: 'percentage', label: 'Porcentagem (%)' },
+        { key: 'submittedAt', label: 'Data de Entrega' },
+      ];
+      fileName = `notas-atividades-${new Date().toISOString().split('T')[0]}.csv`;
+    }
+
+    if (data.length > 0) {
+      const csv = convertToCSV(data, headers);
+      downloadCSV(csv, fileName);
+    } else if (selectedReport !== 'backup') {
+      alert('Não há dados para exportar neste relatório.');
+    }
+  };
 
   const handleExportBackup = () => {
     const data = dbService.exportBackupJson();
@@ -54,6 +198,29 @@ export const AdminReportsView: React.FC = () => {
     reader.readAsText(file);
   };
 
+  const handleExportToDrive = async () => {
+    if (!isAdmin) return;
+    setIsBackingUp(true);
+    setImportStatus(null);
+    try {
+      const data = dbService.exportBackupJson();
+      const backupData = JSON.parse(data);
+      
+      const mainFolderId = await driveService.getOrCreateFolder('Plataforma de Ensino Luterano');
+      const backupFolderId = await driveService.getOrCreateFolder('Backups Automáticos', mainFolderId);
+      
+      const fileName = `backup-ensino-luterano-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+      await driveService.backupData(backupData, fileName, backupFolderId);
+      
+      setImportStatus('Backup enviado com sucesso para a pasta "Backups Automáticos" no seu Google Drive!');
+    } catch (err: any) {
+      console.error(err);
+      setImportStatus(`Erro ao enviar para o Drive: ${err.message || 'Verifique sua conexão.'}`);
+    } finally {
+      setIsBackingUp(false);
+    }
+  };
+
   const handlePrint = () => {
     window.print();
   };
@@ -81,12 +248,39 @@ export const AdminReportsView: React.FC = () => {
               <span>Imprimir / Gerar PDF</span>
             </button>
 
+            {selectedReport !== 'backup' && (
+              <button
+                onClick={handleExportCSV}
+                className="py-2.5 px-4 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition flex items-center gap-1.5 border border-white/20"
+              >
+                <FileSpreadsheet className="w-4 h-4" />
+                <span>Exportar (CSV)</span>
+              </button>
+            )}
+
             <button
               onClick={handleExportBackup}
               className="py-2.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs transition flex items-center gap-1.5 shadow-md"
             >
               <Download className="w-4 h-4" />
               <span>Exportar Backup (JSON)</span>
+            </button>
+
+            <button
+              onClick={handleExportToDrive}
+              disabled={isBackingUp}
+              className={`py-2.5 px-4 rounded-xl font-bold text-xs transition flex items-center gap-1.5 shadow-md ${
+                isBackingUp 
+                  ? 'bg-slate-400 cursor-not-allowed text-white' 
+                  : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+              }`}
+            >
+              {isBackingUp ? (
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <Cloud className="w-4 h-4" />
+              )}
+              <span>{isBackingUp ? 'Enviando...' : 'Backup para Google Drive'}</span>
             </button>
           </div>
         </div>
@@ -341,7 +535,7 @@ export const AdminReportsView: React.FC = () => {
                 1. Exportar Cópia de Segurança
               </h4>
               <p className="text-xs text-slate-600">
-                Baixe um arquivo estruturado com todos os registros paroquiais em formato JSON.
+                Baixe um arquivo estruturado com todos os registros paroquiais em formato JSON localmente.
               </p>
               <button
                 onClick={handleExportBackup}
@@ -371,6 +565,71 @@ export const AdminReportsView: React.FC = () => {
                 />
               </label>
             </div>
+          </div>
+
+          {/* Cloud Snapshots List */}
+          <div className="pt-4 border-t border-slate-100 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-sm font-bold text-slate-900 font-display flex items-center gap-2">
+                  <Database className="w-4 h-4 text-[#1e3a5f]" />
+                  <span>Snapshots Diários (Firebase Storage)</span>
+                </h4>
+                <p className="text-[11px] text-slate-500">
+                  Cópias de segurança automáticas realizadas diariamente às 03:00.
+                </p>
+              </div>
+              <button
+                onClick={handleTriggerManualBackup}
+                disabled={isTriggeringBackup}
+                className="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[10px] transition flex items-center gap-1.5 border border-slate-200"
+              >
+                {isTriggeringBackup ? (
+                  <RefreshCw className="w-3 h-3 animate-spin" />
+                ) : (
+                  <Database className="w-3 h-3" />
+                )}
+                <span>{isTriggeringBackup ? 'Processando...' : 'Gerar Snapshot Agora'}</span>
+              </button>
+            </div>
+
+            {isLoadingBackups ? (
+              <div className="py-8 text-center text-slate-400 text-xs italic">
+                Buscando backups no servidor...
+              </div>
+            ) : storageBackups.length === 0 ? (
+              <div className="py-8 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-slate-500 text-xs">
+                Nenhum snapshot automático encontrado.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {storageBackups.map((backup) => (
+                  <div key={backup.id} className="p-3.5 rounded-2xl border border-slate-200 bg-white shadow-xs hover:border-sky-300 transition group">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center">
+                        <Clock className="w-4 h-4" />
+                      </div>
+                      <button
+                        onClick={() => handleDownloadStorageBackup(backup.name)}
+                        className="p-1.5 rounded-lg bg-slate-50 text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition"
+                        title="Baixar Snapshot"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-[11px] font-bold text-slate-800 truncate" title={backup.name}>
+                        {backup.name}
+                      </p>
+                      <div className="flex items-center justify-between text-[10px] text-slate-500">
+                        <span>{(parseInt(backup.size) / 1024).toFixed(1)} KB</span>
+                        <span>{new Date(backup.updated).toLocaleDateString('pt-BR')}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}

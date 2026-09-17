@@ -66,6 +66,12 @@ const CATEGORY_STYLES: Record<string, { label: string; bg: string; text: string;
     text: 'text-rose-900',
     border: 'border-rose-300',
   },
+  comemoracao: {
+    label: 'Data Comemorativa',
+    bg: 'bg-indigo-100',
+    text: 'text-indigo-900',
+    border: 'border-indigo-300',
+  },
   outro: {
     label: 'Geral / Comunitário',
     bg: 'bg-slate-100',
@@ -528,6 +534,7 @@ export const AdminCalendarView: React.FC = () => {
                     <option value="retiro">Retiro Espiritual</option>
                     <option value="aula">Aula Extraordinária</option>
                     <option value="reuniao">Reunião de Pais</option>
+                    <option value="comemoracao">Data Comemorativa</option>
                     <option value="outro">Geral / Comunitário</option>
                   </select>
                 </div>

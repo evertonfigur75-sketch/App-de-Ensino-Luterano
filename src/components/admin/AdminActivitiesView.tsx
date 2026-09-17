@@ -114,7 +114,7 @@ export const AdminActivitiesView: React.FC<{ onNavigateToQuizzes?: (activityId: 
     reader.readAsDataURL(file);
   };
 
-  const handleSaveActivity = (e: React.FormEvent) => {
+  const handleSaveActivity = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) {
       alert('Preencha o título da atividade.');
@@ -138,23 +138,23 @@ export const AdminActivitiesView: React.FC<{ onNavigateToQuizzes?: (activityId: 
       questions: questions.filter((q) => q.question.trim().length > 0),
     };
 
-    dbService.saveActivity(activityToSave);
+    await dbService.saveActivity(activityToSave);
     setIsModalOpen(false);
     setFeedback(`Atividade "${activityToSave.title}" salva com sucesso!`);
     setTimeout(() => setFeedback(null), 4000);
   };
 
-  const handleDeleteActivity = (id: string, actTitle: string) => {
+  const handleDeleteActivity = async (id: string, actTitle: string) => {
     if (confirm(`Tem certeza que deseja excluir a atividade "${actTitle}"?`)) {
-      dbService.deleteActivity(id);
+      await dbService.deleteActivity(id);
       setFeedback(`Atividade "${actTitle}" excluída.`);
       setTimeout(() => setFeedback(null), 3000);
     }
   };
 
-  const handleTogglePublish = (act: Activity) => {
+  const handleTogglePublish = async (act: Activity) => {
     const updated = { ...act, published: !act.published };
-    dbService.saveActivity(updated);
+    await dbService.saveActivity(updated);
     setFeedback(`Atividade ${updated.published ? 'publicada' : 'ocultada'} com sucesso.`);
     setTimeout(() => setFeedback(null), 3000);
   };

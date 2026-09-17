@@ -55,9 +55,11 @@ export const StudentWorshipView: React.FC = () => {
   const [messageTheme, setMessageTheme] = useState('');
   const [messageSummary, setMessageSummary] = useState('');
   const [photoUrl, setPhotoUrl] = useState('');
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [targetMonthIndex, setTargetMonthIndex] = useState<number>(1);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const worshipRecords = dbService.getWorshipRecordsByStudent(studentProfile.id);
   const approvedCount = worshipRecords.filter((w) => w.status === 'approved').length;
@@ -70,7 +72,7 @@ export const StudentWorshipView: React.FC = () => {
     return worshipRecords.find((w) => w.monthIndex === monthIdx);
   };
 
-  const handleSubmitWorship = (e: React.FormEvent) => {
+  const handleSubmitWorship = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setSuccessMsg(null);
@@ -86,29 +88,37 @@ export const StudentWorshipView: React.FC = () => {
       return;
     }
 
-    const newRecord = dbService.submitWorshipRecord({
-      studentId: studentProfile.id,
-      studentName: studentProfile.name,
-      congregationId: studentProfile.congregationId || 'cong-1',
-      congregationName: studentProfile.congregationName || 'CEL Paroquial',
-      monthIndex: targetMonthIndex,
-      worshipDate,
-      scriptureReading: biblicalReading,
-      biblicalReading,
-      sermonText: messageTheme,
-      messageTheme,
-      sermonSummary: messageSummary,
-      messageSummary,
-      photoUrl,
-    });
+    setIsSubmitting(true);
+    try {
+      await dbService.submitWorshipRecord({
+        studentId: studentProfile.id,
+        studentName: studentProfile.name,
+        congregationId: studentProfile.congregationId || 'cong-1',
+        congregationName: studentProfile.congregationName || 'CEL Paroquial',
+        monthIndex: targetMonthIndex,
+        worshipDate,
+        scriptureReading: biblicalReading,
+        biblicalReading,
+        sermonText: messageTheme,
+        messageTheme,
+        sermonSummary: messageSummary,
+        messageSummary,
+        photoUrl,
+      }, photoFile || undefined);
 
-    setSuccessMsg('Resumo do culto enviado com sucesso! Aguarde a aprovação do Pastor Everton Figur.');
-    // Reset form
-    setBiblicalReading('');
-    setMessageTheme('');
-    setMessageSummary('');
-    setPhotoUrl('');
-    setActiveTab('historico');
+      setSuccessMsg('Resumo do culto enviado com sucesso! Aguarde a aprovação do Pastor Everton Figur.');
+      // Reset form
+      setBiblicalReading('');
+      setMessageTheme('');
+      setMessageSummary('');
+      setPhotoUrl('');
+      setPhotoFile(null);
+      setActiveTab('historico');
+    } catch (err) {
+      setError('Ocorreu um erro ao enviar o resumo. Tente novamente.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -441,6 +451,7 @@ export const StudentWorshipView: React.FC = () => {
                 label="Fotografia Comprobatória (Câmera ou Galeria)"
                 value={photoUrl}
                 onChange={setPhotoUrl}
+                onFileSelect={setPhotoFile}
                 helpText="Tire uma foto no culto, do folheto dominical com data, ou selfie na congregação."
               />
             </div>
@@ -448,10 +459,17 @@ export const StudentWorshipView: React.FC = () => {
             <div className="pt-4 border-t border-slate-100 flex justify-end">
               <button
                 type="submit"
-                className="py-3 px-6 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs transition shadow-md flex items-center gap-2"
+                disabled={isSubmitting}
+                className={`py-3 px-6 rounded-xl text-white font-bold text-xs transition shadow-md flex items-center gap-2 ${
+                  isSubmitting ? 'bg-slate-400 cursor-not-allowed' : 'bg-emerald-700 hover:bg-emerald-800'
+                }`}
               >
-                <CalendarCheck className="w-4 h-4" />
-                <span>ENVIAR RESUMO DO CULTO</span>
+                {isSubmitting ? (
+                  <Clock className="w-4 h-4 animate-spin" />
+                ) : (
+                  <CalendarCheck className="w-4 h-4" />
+                )}
+                <span>{isSubmitting ? 'ENVIANDO...' : 'ENVIAR RESUMO DO CULTO'}</span>
               </button>
             </div>
           </form>

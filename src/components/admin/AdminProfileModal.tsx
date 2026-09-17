@@ -37,6 +37,7 @@ export const AdminProfileModal: React.FC<AdminProfileModalProps> = ({
   );
   const [city, setCity] = useState(currentUser?.city || 'Planalto');
   const [state, setState] = useState(currentUser?.state || 'RS');
+  const [avatarFile, setAvatarFile] = useState<File | undefined>(undefined);
 
   // Password change
   const [newPassword, setNewPassword] = useState('');
@@ -59,7 +60,7 @@ export const AdminProfileModal: React.FC<AdminProfileModalProps> = ({
       avatarUrl,
       city,
       state,
-    });
+    }, avatarFile);
 
     if (newPassword) {
       if (newPassword.length < 6) {
@@ -148,7 +149,9 @@ export const AdminProfileModal: React.FC<AdminProfileModalProps> = ({
             <ImageUploadInput
               value={avatarUrl}
               onChange={setAvatarUrl}
+              onFileSelect={setAvatarFile}
               label="Alterar Foto Oficial"
+              isAvatar={true}
             />
           </div>
 

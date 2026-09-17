@@ -1,14 +1,23 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useAppSettings } from '../../context/AppSettingsContext';
 import { dbService } from '../../services/db';
-import { Award, CheckCircle2, BookOpen, AlertCircle, FileText } from 'lucide-react';
+import { Award, CheckCircle2, BookOpen, AlertCircle, FileText, Printer } from 'lucide-react';
+import { generateStudentGradesPDF } from '../../utils/pdfReport';
 
 export const StudentGradesView: React.FC<{ onOpenActivity: (id: string) => void }> = ({ onOpenActivity }) => {
   const { studentProfile } = useAuth();
+  const { settings } = useAppSettings();
+
   if (!studentProfile) return null;
 
   const grades = dbService.getGradesByStudent(studentProfile.id);
   const activities = dbService.getActivities(studentProfile.courseType);
+  const congregation = studentProfile.congregationId ? dbService.getCongregations().find(c => c.id === studentProfile.congregationId) : undefined;
+
+  const handleDownloadPDF = () => {
+    generateStudentGradesPDF(studentProfile, grades, settings, congregation);
+  };
 
   const avgGrade =
     grades.length > 0
@@ -19,21 +28,32 @@ export const StudentGradesView: React.FC<{ onOpenActivity: (id: string) => void 
     <div className="space-y-6 pb-12">
       {/* Banner */}
       <div className="rounded-3xl bg-gradient-to-r from-purple-800 via-indigo-900 to-slate-900 text-white p-6 shadow-xl relative overflow-hidden">
-        <div className="max-w-xl space-y-2">
-          <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-purple-400/20 text-purple-200 text-xs font-bold">
-            <Award className="w-3.5 h-3.5" />
-            <span>Boletim de Instrução Cristã</span>
-          </div>
-          <h2 className="text-xl sm:text-2xl font-bold font-display">Minhas Notas e Avaliações</h2>
-          <p className="text-xs sm:text-sm text-purple-100">
-            Acompanhe o rendimento nas atividades bíblicas, doutrinárias e do Catecismo Menor.
-          </p>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+          <div className="max-w-xl space-y-2">
+            <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-purple-400/20 text-purple-200 text-xs font-bold">
+              <Award className="w-3.5 h-3.5" />
+              <span>Boletim de Instrução Cristã</span>
+            </div>
+            <h2 className="text-xl sm:text-2xl font-bold font-display">Minhas Notas e Avaliações</h2>
+            <p className="text-xs sm:text-sm text-purple-100">
+              Acompanhe o rendimento nas atividades bíblicas, doutrinárias e do Catecismo Menor.
+            </p>
 
-          <div className="pt-2 flex items-center gap-4 text-xs font-semibold text-purple-200">
-            <span>Média Geral: <strong className="text-white text-sm">{avgGrade}</strong> / 10</span>
-            <span>•</span>
-            <span>{grades.length} de {activities.length} atividades realizadas</span>
+            <div className="pt-2 flex items-center gap-4 text-xs font-semibold text-purple-200">
+              <span>Média Geral: <strong className="text-white text-sm">{avgGrade}</strong> / 10</span>
+              <span>•</span>
+              <span>{grades.length} de {activities.length} atividades realizadas</span>
+            </div>
           </div>
+
+          <button
+            onClick={handleDownloadPDF}
+            disabled={grades.length === 0}
+            className="shrink-0 flex items-center gap-2 px-5 py-3 rounded-2xl bg-white text-slate-900 font-bold text-xs hover:bg-purple-50 transition shadow-lg disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+          >
+            <Printer className="w-4 h-4" />
+            <span>Gerar Boletim Oficial (PDF)</span>
+          </button>
         </div>
       </div>
 

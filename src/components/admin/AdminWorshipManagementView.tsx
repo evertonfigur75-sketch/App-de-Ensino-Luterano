@@ -29,8 +29,8 @@ export const AdminWorshipManagementView: React.FC = () => {
     return matchStatus && matchCongregation;
   });
 
-  const handleReview = (recordId: string, status: WorshipStatus, notes?: string) => {
-    dbService.reviewWorshipRecord(recordId, status, notes);
+  const handleReview = async (recordId: string, status: WorshipStatus, notes?: string) => {
+    await dbService.reviewWorshipRecord(recordId, status, notes);
     setFeedbackMsg(`Presença marcada como: ${status === 'approved' ? 'Aprovada' : 'Recusada'}`);
     setSelectedRecordForDetail(null);
   };

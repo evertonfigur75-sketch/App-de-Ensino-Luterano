@@ -24,15 +24,15 @@ export const AdminRequestsView: React.FC<{ onRefresh?: () => void }> = ({ onRefr
   const students = dbService.getAllStudents();
   const pendingRequests = students.filter((s) => s.status === 'pending');
 
-  const handleApprove = (studentId: string) => {
-    dbService.approveStudent(studentId);
+  const handleApprove = async (studentId: string) => {
+    await dbService.approveStudent(studentId);
     setFeedbackMsg('Aluno aprovado com sucesso! Matrícula liberada para o curso e cultos.');
     onRefresh?.();
   };
 
-  const handleConfirmReject = () => {
+  const handleConfirmReject = async () => {
     if (!rejectModalStudent) return;
-    dbService.rejectStudent(rejectModalStudent.id, rejectReason || 'Solicitação recusada pelo Pastor.');
+    await dbService.rejectStudent(rejectModalStudent.id, rejectReason || 'Solicitação recusada pelo Pastor.');
     setRejectModalStudent(null);
     setRejectReason('');
     setFeedbackMsg('Solicitação recusada.');

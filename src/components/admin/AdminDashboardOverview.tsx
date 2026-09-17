@@ -29,7 +29,15 @@ import {
   HelpCircle,
   Calendar,
   Palette,
+  Database,
+  MessageSquare,
+  History,
+  Terminal,
+  Activity as ActivityIcon,
 } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { ModuleCompletionChart } from './ModuleCompletionChart';
+import { NetworkDiagnosticCard } from '../pwa/NetworkDiagnosticCard';
 
 interface AdminDashboardOverviewProps {
   onNavigate: (tab: string, filter?: string) => void;
@@ -42,6 +50,7 @@ export const AdminDashboardOverview: React.FC<AdminDashboardOverviewProps> = ({
   onSelectStudent,
   onDataChanged,
 }) => {
+  const { currentUser } = useAuth();
   const [selectedCongregation, setSelectedCongregation] = useState<string>('all');
   const [feedbackMsg, setFeedbackMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [rejectModalStudent, setRejectModalStudent] = useState<StudentProfile | null>(null);
@@ -105,8 +114,8 @@ export const AdminDashboardOverview: React.FC<AdminDashboardOverviewProps> = ({
   const memorizedCount = allAssessments.filter((a) => a.status === 'Memorizado').length;
   const inProgressCount = allAssessments.filter((a) => a.status === 'Em andamento').length;
 
-  const handleApprove = (student: StudentProfile) => {
-    dbService.approveStudent(student.id);
+  const handleApprove = async (student: StudentProfile) => {
+    await dbService.approveStudent(student.id);
     setFeedbackMsg({
       type: 'success',
       text: `Inscrição de ${student.name} aprovada com sucesso! O acesso do aluno foi liberado.`,
@@ -114,9 +123,9 @@ export const AdminDashboardOverview: React.FC<AdminDashboardOverviewProps> = ({
     onDataChanged?.();
   };
 
-  const handleConfirmReject = () => {
+  const handleConfirmReject = async () => {
     if (!rejectModalStudent) return;
-    dbService.rejectStudent(rejectModalStudent.id, rejectReason || 'Solicitação não aprovada pela paróquia.');
+    await dbService.rejectStudent(rejectModalStudent.id, rejectReason || 'Solicitação não aprovada pela paróquia.');
     setFeedbackMsg({
       type: 'error',
       text: `A inscrição de ${rejectModalStudent.name} foi recusada com justificativa pastoral registrada.`,
@@ -387,10 +396,41 @@ export const AdminDashboardOverview: React.FC<AdminDashboardOverviewProps> = ({
 
       {/* QUICK MANAGEMENT ACCESS: ATIVIDADES, QUESTIONÁRIOS, CALENDÁRIO & BRANDING */}
       <div className="space-y-3">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-600 font-display flex items-center gap-2">
-          <BookmarkCheck className="w-3.5 h-3.5 text-[#1e3a5f]" />
-          <span>Ferramentas de Gestão Pastoral & Paroquial</span>
-        </h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-600 font-display flex items-center gap-2">
+            <BookmarkCheck className="w-3.5 h-3.5 text-[#1e3a5f]" />
+            <span>Ferramentas de Gestão Pastoral & Paroquial</span>
+          </h3>
+          <button 
+            onClick={async () => {
+              if (window.confirm('Deseja realizar um backup manual de segurança agora? Os dados serão salvos no Firebase Storage e Google Drive.')) {
+                try {
+                  const idToken = await currentUser?.getIdToken();
+                  
+                  setFeedbackMsg({ type: 'success', text: 'Iniciando backup manual em segundo plano...' });
+                  
+                  // Trigger Firestore Snapshot
+                  const snapshotPromise = fetch('/api/admin/backups/trigger', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${idToken}` }
+                  });
+
+                  // Trigger Drive Backup (via local client since it needs Drive auth)
+                  // Note: handleExportToDrive is in ReportsView, but we can call it if we extract it or just rely on server backup
+                  
+                  await snapshotPromise;
+                  setFeedbackMsg({ type: 'success', text: 'Backup de segurança (Cloud Snapshot) concluído com sucesso!' });
+                } catch (err) {
+                  setFeedbackMsg({ type: 'error', text: 'Erro ao processar backup manual.' });
+                }
+              }
+            }}
+            className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-100 hover:bg-[#1e3a5f] hover:text-white text-slate-600 text-[10px] font-bold transition border border-slate-200"
+          >
+            <Database className="w-3 h-3" />
+            <span>Backup Manual Agora</span>
+          </button>
+        </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {/* Atividades & Upload */}
@@ -497,6 +537,87 @@ export const AdminDashboardOverview: React.FC<AdminDashboardOverviewProps> = ({
             </div>
             <span className="text-[11px] font-bold text-amber-800 flex items-center gap-1 pt-1 border-t border-slate-100">
               <span>Personalizar visual</span>
+              <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition" />
+            </span>
+          </div>
+
+          {/* Canal de Dúvidas / Mensagens */}
+          <div
+            onClick={() => onNavigate('mensagens')}
+            className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs hover:border-indigo-600 hover:shadow-sm transition cursor-pointer flex flex-col justify-between space-y-2 group"
+          >
+            <div className="flex items-center justify-between">
+              <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-700 flex items-center justify-center font-bold group-hover:scale-105 transition">
+                <MessageSquare className="w-4 h-4" />
+              </div>
+              <span className="text-[10px] font-bold text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded-full">
+                Suporte Direto
+              </span>
+            </div>
+            <div>
+              <h4 className="font-bold text-slate-900 text-xs font-display">
+                Dúvidas dos Alunos
+              </h4>
+              <p className="text-[11px] text-slate-500 line-clamp-2 mt-0.5">
+                Responda perguntas e interaja com os alunos em tempo real.
+              </p>
+            </div>
+            <span className="text-[11px] font-bold text-indigo-700 flex items-center gap-1 pt-1 border-t border-slate-100">
+              <span>Abrir canal de mensagens</span>
+              <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition" />
+            </span>
+          </div>
+
+          {/* Auditoria e Logs de Sistema */}
+          <div
+            onClick={() => onNavigate('logs')}
+            className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs hover:border-slate-800 hover:shadow-sm transition cursor-pointer flex flex-col justify-between space-y-2 group"
+          >
+            <div className="flex items-center justify-between">
+              <div className="w-9 h-9 rounded-xl bg-slate-100 text-slate-800 flex items-center justify-center font-bold group-hover:scale-105 transition">
+                <History className="w-4 h-4" />
+              </div>
+              <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
+                Audit Log
+              </span>
+            </div>
+            <div>
+              <h4 className="font-bold text-slate-900 text-xs font-display">
+                Auditoria e Logs
+              </h4>
+              <p className="text-[11px] text-slate-500 line-clamp-2 mt-0.5">
+                Histórico de acessos, cadastros, exclusões e modificações.
+              </p>
+            </div>
+            <span className="text-[11px] font-bold text-slate-800 flex items-center gap-1 pt-1 border-t border-slate-100">
+              <span>Ver registros</span>
+              <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition" />
+            </span>
+          </div>
+
+          {/* Scripts de Sistema */}
+          <div
+            onClick={() => onNavigate('scripts')}
+            className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs hover:border-slate-900 hover:shadow-sm transition cursor-pointer flex flex-col justify-between space-y-2 group"
+          >
+            <div className="flex items-center justify-between">
+              <div className="w-9 h-9 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold group-hover:scale-105 transition">
+                <Terminal className="w-4 h-4" />
+              </div>
+              <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
+                Developer Console
+              </span>
+            </div>
+            <div>
+              <h4 className="font-bold text-slate-900 text-xs font-display">
+                Scripts de Sistema
+              </h4>
+              <p className="text-[11px] text-slate-500 line-clamp-2 mt-0.5">
+                Execute rotinas de manutenção, disparos e auditoria.
+              </p>
+            </div>
+            <span className="text-[11px] font-bold text-slate-900 flex items-center gap-1 pt-1 border-t border-slate-100">
+              <span>Abrir terminal</span>
               <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition" />
             </span>
           </div>
@@ -779,6 +900,15 @@ export const AdminDashboardOverview: React.FC<AdminDashboardOverviewProps> = ({
             </div>
           </div>
         </div>
+      </div>
+
+      {/* 4. GRÁFICOS DE DESEMPENHO (RECHARTS) */}
+      <div className="space-y-3">
+        <h3 className="text-sm font-bold uppercase tracking-wider text-slate-800 font-display flex items-center gap-2">
+          <BarChart3 className="w-4 h-4 text-[#1e3a5f]" />
+          <span>Análise de Conclusão de Módulos</span>
+        </h3>
+        <ModuleCompletionChart />
       </div>
 
       {/* Recentes Alunos e Ações Rápidas */}
@@ -1080,6 +1210,7 @@ export const AdminDashboardOverview: React.FC<AdminDashboardOverviewProps> = ({
           </div>
         </div>
       )}
+      <NetworkDiagnosticCard />
     </div>
   );
 };

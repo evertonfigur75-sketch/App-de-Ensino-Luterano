@@ -82,7 +82,7 @@ export const AdminQuizzesView: React.FC<{ initialActivityId?: string }> = ({
     setExplanation(q.explanation || '');
   };
 
-  const handleSaveQuestion = (e: React.FormEvent) => {
+  const handleSaveQuestion = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedActivity) return;
 
@@ -118,13 +118,13 @@ export const AdminQuizzesView: React.FC<{ initialActivityId?: string }> = ({
       questions: updatedQuestions,
     };
 
-    dbService.saveActivity(updatedActivity);
+    await dbService.saveActivity(updatedActivity);
     setEditingQuestionId(null);
     setFeedback('Questão salva com sucesso!');
     setTimeout(() => setFeedback(null), 3000);
   };
 
-  const handleDeleteQuestion = (qId: string) => {
+  const handleDeleteQuestion = async (qId: string) => {
     if (!selectedActivity) return;
     if (confirm('Tem certeza que deseja excluir esta questão?')) {
       const updatedQuestions = questions.filter((q) => q.id !== qId);
@@ -132,13 +132,13 @@ export const AdminQuizzesView: React.FC<{ initialActivityId?: string }> = ({
         ...selectedActivity,
         questions: updatedQuestions,
       };
-      dbService.saveActivity(updatedActivity);
+      await dbService.saveActivity(updatedActivity);
       setFeedback('Questão removida.');
       setTimeout(() => setFeedback(null), 3000);
     }
   };
 
-  const handleDuplicateQuestion = (q: Question) => {
+  const handleDuplicateQuestion = async (q: Question) => {
     if (!selectedActivity) return;
     const duplicated: Question = {
       ...q,
@@ -146,7 +146,7 @@ export const AdminQuizzesView: React.FC<{ initialActivityId?: string }> = ({
       question: q.question + ' (Cópia)',
     };
     const updatedQuestions = [...questions, duplicated];
-    dbService.saveActivity({ ...selectedActivity, questions: updatedQuestions });
+    await dbService.saveActivity({ ...selectedActivity, questions: updatedQuestions });
     setFeedback('Questão duplicada!');
     setTimeout(() => setFeedback(null), 3000);
   };

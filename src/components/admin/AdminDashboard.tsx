@@ -10,6 +10,8 @@ import { AdminActivitiesView } from './AdminActivitiesView';
 import { AdminQuizzesView } from './AdminQuizzesView';
 import { AdminCalendarView } from './AdminCalendarView';
 import { AdminCustomizationView } from './AdminCustomizationView';
+import { AdminMessagingView } from './AdminMessagingView';
+import { AdminAuditLogs } from './AdminAuditLogs';
 import {
   LayoutDashboard,
   Clock,
@@ -21,7 +23,11 @@ import {
   HelpCircle,
   Calendar,
   Palette,
+  MessageSquare,
+  History,
+  Terminal,
 } from 'lucide-react';
+import { AdminScriptsPanel } from './AdminScriptsPanel';
 
 export const AdminDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>('visao_geral');
@@ -126,6 +132,18 @@ export const AdminDashboard: React.FC = () => {
           </button>
 
           <button
+            onClick={() => setActiveTab('mensagens')}
+            className={`py-2 px-3 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+              activeTab === 'mensagens'
+                ? 'bg-[#1e3a5f] text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+            }`}
+          >
+            <MessageSquare className="w-3.5 h-3.5" />
+            <span>Mensagens / Dúvidas</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab('calendario')}
             className={`py-2 px-3 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'calendario'
@@ -189,6 +207,30 @@ export const AdminDashboard: React.FC = () => {
             <Download className="w-3.5 h-3.5" />
             <span>Relatórios & Backup</span>
           </button>
+
+          <button
+            onClick={() => setActiveTab('logs')}
+            className={`py-2 px-3 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+              activeTab === 'logs'
+                ? 'bg-[#1e3a5f] text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+            }`}
+          >
+            <History className="w-3.5 h-3.5" />
+            <span>Auditoria</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('scripts')}
+            className={`py-2 px-3 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+              activeTab === 'scripts'
+                ? 'bg-[#1e3a5f] text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+            }`}
+          >
+            <Terminal className="w-3.5 h-3.5" />
+            <span>Scripts de Sistema</span>
+          </button>
         </div>
       </div>
 
@@ -217,6 +259,8 @@ export const AdminDashboard: React.FC = () => {
 
       {activeTab === 'calendario' && <AdminCalendarView />}
 
+      {activeTab === 'mensagens' && <AdminMessagingView />}
+
       {activeTab === 'personalizacao' && <AdminCustomizationView />}
 
       {activeTab === 'cultos' && <AdminWorshipManagementView />}
@@ -224,6 +268,10 @@ export const AdminDashboard: React.FC = () => {
       {activeTab === 'conteudos' && <AdminContentManagementView />}
 
       {activeTab === 'relatorios' && <AdminReportsView />}
+
+      {activeTab === 'logs' && <AdminAuditLogs />}
+
+      {activeTab === 'scripts' && <AdminScriptsPanel />}
     </div>
   );
 };

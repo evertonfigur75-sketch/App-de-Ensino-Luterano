@@ -113,7 +113,7 @@ export const AdminCustomizationView: React.FC = () => {
     setAccentColor(preset.accent);
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!appName.trim()) {
       alert('O nome do aplicativo não pode ficar vazio.');
@@ -129,14 +129,14 @@ export const AdminCustomizationView: React.FC = () => {
       accentColor,
     };
 
-    updateSettings(updated);
+    await updateSettings(updated);
     setFeedback('Identidade visual e branding atualizados com sucesso!');
     setTimeout(() => setFeedback(null), 4000);
   };
 
-  const handleResetToDefault = () => {
+  const handleResetToDefault = async () => {
     if (confirm('Deseja restaurar as cores, logo e nome originais da plataforma?')) {
-      resetSettings();
+      await resetSettings();
       setAppName(DEFAULT_APP_SETTINGS.appName);
       setAppSubtitle(DEFAULT_APP_SETTINGS.appSubtitle);
       setLogoType('luther_rose');

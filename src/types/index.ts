@@ -73,11 +73,28 @@ export interface InternalNote {
   text?: string;
 }
 
+export type DocumentStatus = 'pending' | 'approved' | 'rejected';
+
+export interface ParochialDocument {
+  id: string;
+  studentId: string;
+  type: 'certidao_batismo' | 'documento_identidade' | 'comprovante_residencia' | 'outro';
+  title: string;
+  fileUrl: string;
+  fileName: string;
+  fileSize: string;
+  status: DocumentStatus;
+  submittedAt: string;
+  reviewedAt?: string;
+  pastorNotes?: string;
+}
+
 export interface StudentProfile extends User {
   baptism: BaptismData;
   churchHistory?: ChurchHistoryItem[]; // Specific to Profissão de Fé
   internalNotes?: InternalNote[]; // Private to Pastor
   enrollmentDate?: string;
+  documents?: ParochialDocument[];
 }
 
 export interface Congregation {
@@ -126,6 +143,14 @@ export interface Grade {
   submittedAt: string;
   answers: Record<string, number>;
   feedback?: string;
+}
+
+export interface ActivityDraft {
+  id: string; // studentId + '_' + activityId
+  studentId: string;
+  activityId: string;
+  answers: Record<string, number>;
+  updatedAt: string;
 }
 
 export interface VideoLesson {
@@ -275,5 +300,38 @@ export interface AppSettings {
   logoUrl?: string;
   primaryColor: string; // Hex color code e.g. #1e3a5f
   accentColor: string; // Hex color code e.g. #f59e0b
+}
+
+export type NotificationType = 'activity' | 'grade' | 'announcement' | 'system';
+
+export interface AppNotification {
+  id: string;
+  userId: string; // Recipient
+  title: string;
+  message: string;
+  type: NotificationType;
+  read: boolean;
+  createdAt: string;
+  link?: string; // Optional internal link
+}
+
+export interface DirectMessage {
+  id: string;
+  senderId: string;
+  senderName: string;
+  recipientId: string;
+  studentId: string; // The "room" identifier
+  text: string;
+  createdAt: string;
+  read: boolean;
+}
+
+export interface AuditLog {
+  id: string;
+  userId: string;
+  userName: string;
+  action: string;
+  details: any;
+  timestamp: string;
 }
 

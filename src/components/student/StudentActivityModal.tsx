@@ -39,16 +39,48 @@ export const StudentActivityModal: React.FC<StudentActivityModalProps> = ({
   );
   const [submittedGrade, setSubmittedGrade] = useState<Grade | null>(existingGrade || null);
   const [error, setError] = useState<string | null>(null);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+
+  // Load draft on mount
+  React.useEffect(() => {
+    if (!existingGrade) {
+      const loadDraft = async () => {
+        const draft = await dbService.getActivityDraft(studentProfile.id, activityId);
+        if (draft) {
+          setSelectedAnswers(draft.answers);
+        }
+      };
+      loadDraft();
+    }
+  }, [activityId, studentProfile.id, existingGrade]);
 
   const question = activity.questions[currentQuestionIdx];
   const totalQuestions = activity.questions.length;
 
-  const handleSelectOption = (optionIdx: number) => {
-    if (submittedGrade) return; // Prevent changing after final submission unless reset
-    setSelectedAnswers({
+  const handleSelectOption = async (optionIdx: number) => {
+    if (submittedGrade) return;
+    
+    const newAnswers = {
       ...selectedAnswers,
       [question.id]: optionIdx,
-    });
+    };
+    
+    setSelectedAnswers(newAnswers);
+    
+    // Save draft
+    setIsSavingDraft(true);
+    try {
+      await dbService.saveActivityDraft({
+        id: `${studentProfile.id}_${activity.id}`,
+        studentId: studentProfile.id,
+        activityId: activity.id,
+        answers: newAnswers,
+      });
+    } catch (e) {
+      console.warn('Erro ao salvar rascunho:', e);
+    } finally {
+      setTimeout(() => setIsSavingDraft(false), 500);
+    }
   };
 
   const handleNext = () => {
@@ -69,7 +101,7 @@ export const StudentActivityModal: React.FC<StudentActivityModalProps> = ({
     }
   };
 
-  const handleSubmitQuiz = () => {
+  const handleSubmitQuiz = async () => {
     setError(null);
     if (selectedAnswers[question.id] === undefined) {
       setError('Por favor, selecione uma resposta para a última questão.');
@@ -77,12 +109,16 @@ export const StudentActivityModal: React.FC<StudentActivityModalProps> = ({
     }
 
     try {
-      const grade = dbService.submitActivityGrade(
+      const grade = await dbService.submitActivityGrade(
         studentProfile.id,
         studentProfile.name,
         activity.id,
         selectedAnswers
       );
+      
+      // Delete draft after successful submission
+      await dbService.deleteActivityDraft(studentProfile.id, activity.id);
+      
       setSubmittedGrade(grade);
       onCompleted?.();
     } catch (err: unknown) {
@@ -198,7 +234,12 @@ export const StudentActivityModal: React.FC<StudentActivityModalProps> = ({
               <span>
                 Questão {currentQuestionIdx + 1} de {totalQuestions}
               </span>
-              <span>{Math.round(((currentQuestionIdx + 1) / totalQuestions) * 100)}%</span>
+              <div className="flex items-center gap-2">
+                {isSavingDraft && (
+                  <span className="text-[10px] text-slate-400 animate-pulse">Salvando rascunho...</span>
+                )}
+                <span>{Math.round(((currentQuestionIdx + 1) / totalQuestions) * 100)}%</span>
+              </div>
             </div>
             <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
               <div

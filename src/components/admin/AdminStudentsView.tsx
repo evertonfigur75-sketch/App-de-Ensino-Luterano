@@ -40,7 +40,7 @@ export const AdminStudentsView: React.FC<AdminStudentsViewProps> = ({ initialStu
   const [selectedCourse, setSelectedCourse] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [activeStudentId, setActiveStudentId] = useState<string | null>(initialStudentId || null);
-  const [studentDetailTab, setStudentDetailTab] = useState<'dados' | 'cultos' | 'notas' | 'catecismo' | 'notas_pastor'>('dados');
+  const [studentDetailTab, setStudentDetailTab] = useState<'dados' | 'cultos' | 'notas' | 'catecismo' | 'notas_pastor' | 'documentos'>('dados');
 
   // Internal pastoral note input
   const [newPastoralNote, setNewPastoralNote] = useState('');
@@ -79,25 +79,25 @@ export const AdminStudentsView: React.FC<AdminStudentsViewProps> = ({ initialStu
     : [];
 
   // Handlers
-  const handleApproveWorship = (recordId: string) => {
-    dbService.reviewWorshipRecord(recordId, 'approved', 'Presença verificada e aprovada pelo Pastor Everton Figur.');
+  const handleApproveWorship = async (recordId: string) => {
+    await dbService.reviewWorshipRecord(recordId, 'approved', 'Presença verificada e aprovada pelo Pastor Everton Figur.');
     setFeedbackMsg('Presença no culto aprovada.');
   };
 
-  const handleRejectWorship = (recordId: string) => {
+  const handleRejectWorship = async (recordId: string) => {
     const reason = window.prompt('Informe o motivo da recusa da presença (opcional):') || 'Resumo insuficiente.';
-    dbService.reviewWorshipRecord(recordId, 'rejected', reason);
+    await dbService.reviewWorshipRecord(recordId, 'rejected', reason);
     setFeedbackMsg('Presença recusada.');
   };
 
-  const handleUpdateCatechism = (
+  const handleUpdateCatechism = async (
     sectionId: string,
     status: CatechismStatus,
     score: number,
     notes: string
   ) => {
     if (!activeStudent) return;
-    dbService.updateCatechismAssessment({
+    await dbService.updateCatechismAssessment({
       studentId: activeStudent.id,
       sectionId,
       status,
@@ -107,9 +107,9 @@ export const AdminStudentsView: React.FC<AdminStudentsViewProps> = ({ initialStu
     setFeedbackMsg('Avaliação do Catecismo atualizada com sucesso!');
   };
 
-  const handleAddInternalNote = () => {
+  const handleAddInternalNote = async () => {
     if (!activeStudent || !newPastoralNote.trim()) return;
-    dbService.addInternalNote(activeStudent.id, {
+    await dbService.addInternalNote(activeStudent.id, {
       author: 'Pastor Everton Figur',
       text: newPastoralNote.trim(),
     });
@@ -117,9 +117,9 @@ export const AdminStudentsView: React.FC<AdminStudentsViewProps> = ({ initialStu
     setFeedbackMsg('Observação pastoral interna registrada.');
   };
 
-  const handleChangeStatus = (status: RequestStatus) => {
+  const handleChangeStatus = async (status: RequestStatus) => {
     if (!activeStudent) return;
-    dbService.updateStudentStatus(activeStudent.id, status);
+    await dbService.updateStudentStatus(activeStudent.id, status);
     setFeedbackMsg(`Status do aluno alterado para: ${status}`);
   };
 
@@ -303,19 +303,50 @@ export const AdminStudentsView: React.FC<AdminStudentsViewProps> = ({ initialStu
                   </div>
                 </div>
 
-                {/* Status Switcher */}
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold text-slate-500">Status:</span>
-                  <select
-                    value={activeStudent.status}
-                    onChange={(e) => handleChangeStatus(e.target.value as RequestStatus)}
-                    className="p-2 rounded-xl border border-slate-300 text-xs font-bold bg-white focus:ring-2 focus:ring-amber-500"
+                {/* Status Switcher & Actions */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-slate-500">Status:</span>
+                    <select
+                      value={activeStudent.status}
+                      onChange={(e) => handleChangeStatus(e.target.value as RequestStatus)}
+                      className="p-2 rounded-xl border border-slate-300 text-xs font-bold bg-white focus:ring-2 focus:ring-amber-500"
+                    >
+                      <option value="approved">Aprovado</option>
+                      <option value="pending">Pendente</option>
+                      <option value="rejected">Recusado</option>
+                      <option value="inactive">Inativo</option>
+                    </select>
+                  </div>
+
+                  <button
+                    onClick={async () => {
+                      const newPass = window.prompt('Informe a nova senha temporária para o aluno:');
+                      if (newPass) {
+                        await dbService.changePassword(activeStudent.id, newPass);
+                        alert('Senha alterada com sucesso!');
+                      }
+                    }}
+                    className="p-2 rounded-xl border border-amber-200 text-amber-700 hover:bg-amber-50 text-[10px] font-bold flex items-center gap-1 transition"
+                    title="Redefinir senha do aluno"
                   >
-                    <option value="approved">Aprovado</option>
-                    <option value="pending">Pendente</option>
-                    <option value="rejected">Recusado</option>
-                    <option value="inactive">Inativo</option>
-                  </select>
+                    <Lock className="w-3 h-3" />
+                    <span>Resetar Senha</span>
+                  </button>
+
+                  <button
+                    onClick={async () => {
+                      if (window.confirm(`TEM CERTEZA que deseja EXCLUIR DEFINITIVAMENTE o aluno ${activeStudent.name}? Todos os registros de presenças e notas serão perdidos.`)) {
+                        await dbService.deleteStudent(activeStudent.id);
+                        setActiveStudentId(null);
+                        setFeedbackMsg(`Aluno ${activeStudent.name} excluído do sistema.`);
+                      }
+                    }}
+                    className="p-2 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 text-[10px] font-bold flex items-center gap-1 transition"
+                  >
+                    <XCircle className="w-3 h-3" />
+                    <span>Excluir Aluno</span>
+                  </button>
                 </div>
               </div>
 
@@ -369,6 +400,18 @@ export const AdminStudentsView: React.FC<AdminStudentsViewProps> = ({ initialStu
                 >
                   <Bookmark className="w-3.5 h-3.5" />
                   <span>Catecismo</span>
+                </button>
+
+                <button
+                  onClick={() => setStudentDetailTab('documentos')}
+                  className={`pb-2.5 font-bold text-xs whitespace-nowrap transition border-b-2 flex items-center gap-1.5 ${
+                    studentDetailTab === 'documentos'
+                      ? 'border-sky-600 text-sky-700'
+                      : 'border-transparent text-slate-500 hover:text-slate-700'
+                  }`}
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>Documentos ({activeStudent.documents?.length || 0})</span>
                 </button>
 
                 <button
@@ -632,6 +675,99 @@ export const AdminStudentsView: React.FC<AdminStudentsViewProps> = ({ initialStu
                         </div>
                       );
                     })}
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 6: Documentos Paroquiais */}
+              {studentDetailTab === 'documentos' && activeStudent && (
+                <div className="space-y-4">
+                  <div className="p-3.5 rounded-2xl bg-[#1e3a5f]/5 border border-[#1e3a5f]/10 text-xs text-slate-800 flex items-center justify-between">
+                    <div>
+                      <span className="font-bold block text-[#1e3a5f]">Verificação de Documentos Paroquiais</span>
+                      <span>Analise as certidões e documentos enviados pelo aluno para aprovação.</span>
+                    </div>
+                    <FileText className="w-8 h-8 text-[#1e3a5f]/20" />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {(!activeStudent.documents || activeStudent.documents.length === 0) ? (
+                      <div className="sm:col-span-2 py-10 text-center border-2 border-dashed border-slate-100 rounded-3xl">
+                        <p className="text-xs text-slate-400 italic">Nenhum documento enviado pelo aluno.</p>
+                      </div>
+                    ) : (
+                      activeStudent.documents.map((doc) => (
+                        <div key={doc.id} className="p-4 rounded-2xl border border-slate-200 bg-white space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600">
+                                <FileText className="w-5 h-5" />
+                              </div>
+                              <div>
+                                <h4 className="text-xs font-bold text-slate-900">{doc.title}</h4>
+                                <p className="text-[10px] text-slate-500">{doc.fileName} • {doc.fileSize}</p>
+                              </div>
+                            </div>
+                            <a 
+                              href={doc.fileUrl} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="p-2 rounded-xl bg-slate-100 text-slate-600 hover:bg-[#1e3a5f] hover:text-white transition"
+                              title="Visualizar documento"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </a>
+                          </div>
+
+                          <div className="flex items-center justify-between text-[10px]">
+                            <div className="flex items-center gap-1.5 font-bold">
+                              {doc.status === 'approved' ? (
+                                <><CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> <span className="text-emerald-700">Aprovado</span></>
+                              ) : doc.status === 'rejected' ? (
+                                <><XCircle className="w-3.5 h-3.5 text-red-600" /> <span className="text-red-700">Recusado</span></>
+                              ) : (
+                                <><Clock className="w-3.5 h-3.5 text-amber-600" /> <span className="text-amber-700">Pendente de Análise</span></>
+                              )}
+                            </div>
+                            <span className="text-slate-400">Enviado em {new Date(doc.submittedAt).toLocaleDateString()}</span>
+                          </div>
+
+                          {doc.status !== 'approved' && (
+                            <div className="pt-2 flex justify-end gap-2">
+                              <button
+                                onClick={async () => {
+                                  const reason = window.prompt('Informe o motivo da recusa ou orientações para reenvio:', doc.pastorNotes || '');
+                                  if (reason !== null) {
+                                    await dbService.reviewDocument(activeStudent.id, doc.id, 'rejected', reason);
+                                    setFeedbackMsg('Documento recusado. O aluno foi notificado para reenvio.');
+                                  }
+                                }}
+                                className="py-1.5 px-3 rounded-lg text-red-700 hover:bg-red-50 text-[10px] font-bold transition"
+                              >
+                                Recusar / Reenviar
+                              </button>
+                              <button
+                                onClick={async () => {
+                                  if (window.confirm('Confirmar aprovação deste documento?')) {
+                                    await dbService.reviewDocument(activeStudent.id, doc.id, 'approved', 'Documento verificado e aprovado pelo Pastor.');
+                                    setFeedbackMsg('Documento aprovado com sucesso.');
+                                  }
+                                }}
+                                className="py-1.5 px-4 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-[10px] font-bold transition"
+                              >
+                                Aprovar Documento
+                              </button>
+                            </div>
+                          )}
+                          
+                          {doc.status === 'approved' && doc.reviewedAt && (
+                            <div className="text-[10px] text-emerald-600 italic bg-emerald-50/50 p-2 rounded-lg border border-emerald-100">
+                               Aprovado em {new Date(doc.reviewedAt).toLocaleDateString()}
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
               )}

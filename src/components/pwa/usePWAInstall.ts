@@ -65,19 +65,46 @@ export function useOnlineStatus() {
   const [isOnline, setIsOnline] = useState(
     typeof navigator !== 'undefined' ? navigator.onLine : true
   );
+  const [networkInfo, setNetworkInfo] = useState<{
+    type?: string;
+    effectiveType?: string;
+    downlink?: number;
+    rtt?: number;
+  }>({});
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
 
+    const updateNetworkInfo = () => {
+      const conn = (navigator as any).connection || (navigator as any).mozConnection || (navigator as any).webkitConnection;
+      if (conn) {
+        setNetworkInfo({
+          type: conn.type,
+          effectiveType: conn.effectiveType,
+          downlink: conn.downlink,
+          rtt: conn.rtt,
+        });
+      }
+    };
+
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
+
+    const conn = (navigator as any).connection || (navigator as any).mozConnection || (navigator as any).webkitConnection;
+    if (conn) {
+      conn.addEventListener('change', updateNetworkInfo);
+      updateNetworkInfo();
+    }
 
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
+      if (conn) {
+        conn.removeEventListener('change', updateNetworkInfo);
+      }
     };
   }, []);
 
-  return isOnline;
+  return { isOnline, networkInfo };
 }

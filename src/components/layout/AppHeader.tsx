@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useAppSettings } from '../../context/AppSettingsContext';
 import { AppLogo } from '../common/AppLogo';
 import { PWAInstallButton } from '../pwa/PWAInstallButton';
+import { NotificationCenter } from '../student/NotificationCenter';
 import { LogOut, User, ShieldCheck, Bell } from 'lucide-react';
 
 interface AppHeaderProps {
@@ -50,6 +51,8 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ title, onOpenProfile }) =>
 
         <div className="flex items-center gap-2 sm:gap-3">
           <PWAInstallButton compact={true} />
+          
+          {!isAdmin && currentUser && <NotificationCenter />}
 
           {/* User profile button */}
           <button

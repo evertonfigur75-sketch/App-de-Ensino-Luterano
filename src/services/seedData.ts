@@ -739,8 +739,8 @@ export const INITIAL_DEMO_STUDENTS: StudentProfile[] = [
     status: 'approved',
     createdAt: '2025-03-01T10:00:00.000Z',
     enrollmentDate: '2025-03-05T14:00:00.000Z',
-    passwordHash: '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918', // 'admin' / sample
-    salt: 'luther_salt_2026',
+    passwordHash: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', // Removed default password
+    salt: 'secure_random_salt_' + Math.random().toString(36).substring(7),
     baptism: {
       isBaptized: true,
       date: '2011-06-12',
@@ -778,8 +778,8 @@ export const INITIAL_DEMO_STUDENTS: StudentProfile[] = [
     congregationName: 'CEL Bom Pastor – São Marcos',
     status: 'pending', // Waiting for Pastor Everton Figur's approval!
     createdAt: '2026-09-14T11:30:00.000Z',
-    passwordHash: '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918',
-    salt: 'luther_salt_2026',
+    passwordHash: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+    salt: 'secure_random_salt_' + Math.random().toString(36).substring(7),
     baptism: {
       isBaptized: true,
       date: '1996-01-14',

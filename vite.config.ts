@@ -11,7 +11,7 @@ export default defineConfig(() => {
       tailwindcss(),
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['icon.svg'],
+        includeAssets: ['logo.jpg', 'favicon.ico', 'apple-touch-icon.png'],
         manifest: {
           id: '/',
           name: 'Plataforma de Ensino Luterano',
@@ -24,16 +24,82 @@ export default defineConfig(() => {
           scope: '/',
           icons: [
             {
-              src: '/icon.svg',
-              sizes: '192x192 512x512',
-              type: 'image/svg+xml',
+              src: '/logo.jpg',
+              sizes: '192x192',
+              type: 'image/jpeg',
               purpose: 'any',
             },
             {
-              src: '/icon.svg',
+              src: '/logo.jpg',
               sizes: '512x512',
-              type: 'image/svg+xml',
+              type: 'image/jpeg',
+              purpose: 'any',
+            },
+            {
+              src: '/logo.jpg',
+              sizes: '512x512',
+              type: 'image/jpeg',
               purpose: 'maskable',
+            },
+          ],
+        },
+        workbox: {
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,jpeg,woff,woff2}'],
+          navigateFallback: 'index.html',
+          maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5MB
+          runtimeCaching: [
+            {
+              urlPattern: /^https:\/\/images\.unsplash\.com\/.*/i,
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'unsplash-images-cache',
+                expiration: {
+                  maxEntries: 50,
+                  maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
+                },
+                cacheableResponse: {
+                  statuses: [0, 200],
+                },
+              },
+            },
+            {
+              urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'google-fonts-cache',
+                expiration: {
+                  maxEntries: 10,
+                  maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
+                },
+                cacheableResponse: {
+                  statuses: [0, 200],
+                },
+              },
+            },
+            {
+              urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'gstatic-fonts-cache',
+                expiration: {
+                  maxEntries: 10,
+                  maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
+                },
+                cacheableResponse: {
+                  statuses: [0, 200],
+                },
+              },
+            },
+            {
+              // Cache lesson materials and other images from the server
+              urlPattern: /\.(?:png|jpg|jpeg|svg|gif)$/,
+              handler: 'StaleWhileRevalidate',
+              options: {
+                cacheName: 'static-images',
+                expiration: {
+                  maxEntries: 100,
+                },
+              },
             },
           ],
         },

@@ -13,6 +13,7 @@ import {
   ChevronRight,
   Share2,
 } from 'lucide-react';
+import { InteractiveCalendar } from '../common/InteractiveCalendar';
 
 export const StudentCommunityView: React.FC<{ initialSection?: 'devocionais' | 'eventos' | 'avisos' | 'textos' }> = ({
   initialSection = 'devocionais',
@@ -119,29 +120,25 @@ export const StudentCommunityView: React.FC<{ initialSection?: 'devocionais' | '
 
       {/* EVENTS */}
       {activeTab === 'eventos' && (
-        <div className="space-y-3">
-          {events.map((evt) => (
-            <div
-              key={evt.id}
-              className="p-5 rounded-3xl bg-white border border-slate-200 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
-            >
-              <div className="space-y-1">
-                <span className="px-2.5 py-0.5 rounded-md bg-sky-100 text-sky-800 font-bold text-[10px] uppercase tracking-wider">
-                  {evt.date} às {evt.time}
-                </span>
-                <h4 className="text-sm font-bold text-slate-900 font-display">{evt.title}</h4>
-                <p className="text-xs text-slate-600">{evt.description}</p>
-                <div className="flex items-center gap-1.5 text-xs text-slate-500 pt-1">
-                  <MapPin className="w-3.5 h-3.5 text-amber-600" />
-                  <span>{evt.location}</span>
-                </div>
-              </div>
-
-              <div className="text-xs font-semibold text-sky-700 bg-sky-50 px-3 py-1.5 rounded-xl border border-sky-200 self-end sm:self-center">
-                Presença Recomendada
-              </div>
+        <div className="space-y-6">
+          <div className="p-5 rounded-3xl bg-gradient-to-br from-sky-600 to-sky-800 text-white shadow-lg relative overflow-hidden">
+            <div className="relative z-10">
+              <h3 className="text-lg font-bold font-display">Agenda Paroquial</h3>
+              <p className="text-[11px] text-sky-100 mt-1 max-w-sm">
+                Fique por dentro de todos os cultos, encontros de jovens e datas especiais da nossa comunidade.
+              </p>
             </div>
-          ))}
+            <Calendar className="absolute -right-4 -bottom-4 w-32 h-32 text-white/10" />
+          </div>
+
+          <InteractiveCalendar events={events} />
+          
+          <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 flex items-start gap-3">
+            <Sparkles className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+            <p className="text-[10px] text-amber-900 leading-relaxed">
+              <strong>Nota:</strong> Clique em um dia com marcador colorido para ver os detalhes do evento programado. Os horários e locais podem ser alterados pelo Pastor conforme a necessidade da paróquia.
+            </p>
+          </div>
         </div>
       )}
 

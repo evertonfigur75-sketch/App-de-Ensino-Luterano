@@ -16,7 +16,19 @@ import {
   Clock,
   Sparkles,
   TrendingUp,
+  Target,
+  MessageSquare,
 } from 'lucide-react';
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+  Legend,
+} from 'recharts';
+
+import { NetworkDiagnosticCard } from '../pwa/NetworkDiagnosticCard';
 
 interface StudentDashboardProps {
   onNavigate: (tab: string) => void;
@@ -98,6 +110,100 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
           >
             Meu Perfil
           </button>
+        </div>
+      </div>
+
+      {/* VISUAL PROGRESS CHART (Section 8) */}
+      <div className="p-5 rounded-3xl bg-white border border-slate-200 shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <Target className="w-4 h-4 text-emerald-600" />
+              Progresso das Atividades
+            </h3>
+            <p className="text-[11px] text-slate-500 mt-0.5">
+              Visualização geral da sua jornada no curso
+            </p>
+          </div>
+          <div className="text-right">
+            <div className="text-xl font-bold text-emerald-600">
+              {Math.round((grades.length / Math.max(1, activities.length)) * 100)}%
+            </div>
+            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              Concluído
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+          <div className="h-[200px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={[
+                    { name: 'Concluídas', value: grades.length },
+                    { name: 'Pendentes', value: Math.max(0, activities.length - grades.length) },
+                  ]}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  <Cell fill="#10b981" />
+                  <Cell fill="#f1f5f9" />
+                </Pie>
+                <Tooltip 
+                  contentStyle={{ 
+                    borderRadius: '12px', 
+                    border: 'none', 
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                    fontSize: '12px',
+                    fontWeight: 'bold'
+                  }}
+                />
+                <Legend 
+                  verticalAlign="bottom" 
+                  height={36}
+                  formatter={(value) => <span className="text-[11px] font-bold text-slate-600">{value}</span>}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-100">
+                <div className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-1">
+                  Atividades Feitas
+                </div>
+                <div className="text-2xl font-bold text-emerald-700">
+                  {grades.length}
+                </div>
+              </div>
+              <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100">
+                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">
+                  Total do Curso
+                </div>
+                <div className="text-2xl font-bold text-slate-700">
+                  {activities.length}
+                </div>
+              </div>
+            </div>
+            
+            <div className="p-4 rounded-2xl bg-amber-50 border border-amber-100 flex items-start gap-3">
+              <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0 text-amber-700">
+                <Clock className="w-4 h-4" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-amber-900">Mantenha o foco!</p>
+                <p className="text-[11px] text-amber-800 leading-relaxed mt-0.5">
+                  Faltam apenas {Math.max(0, activities.length - grades.length)} atividades para você concluir esta etapa do seu aprendizado.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -225,6 +331,27 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
               {memorizedCount} memorizados
             </div>
             <p className="text-[11px] text-slate-500 mt-0.5">8 seções completas</p>
+          </div>
+        </div>
+
+        {/* Card 5: Dúvidas ao Pastor */}
+        <div
+          onClick={() => onNavigate('mensagens')}
+          className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-sm hover:shadow-md transition cursor-pointer flex flex-col justify-between group"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+              Suporte
+            </span>
+            <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-700 flex items-center justify-center group-hover:scale-105 transition">
+              <MessageSquare className="w-4 h-4" />
+            </div>
+          </div>
+          <div>
+            <div className="text-base font-bold text-slate-900">
+              Dúvidas?
+            </div>
+            <p className="text-[11px] text-slate-500 mt-0.5">Pergunte ao Pastor</p>
           </div>
         </div>
       </div>
@@ -367,6 +494,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
           </div>
         </div>
       </div>
+      <NetworkDiagnosticCard />
     </div>
   );
 };
